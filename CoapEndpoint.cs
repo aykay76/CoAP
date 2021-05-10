@@ -103,14 +103,22 @@ namespace coap.core
             return this;
         }
 
-        public async Task StartListeningAsync(CancellationToken token)
+        public void StartListening(CancellationToken token)
         {
+            var exitEvent = new ManualResetEvent(false);
+
+            Console.CancelKeyPress += (sender, eventArgs) => {
+                                  eventArgs.Cancel = true;
+                                  exitEvent.Set();
+                              };
+
             // processing receiving on a background thread, freeing this thread to handle sending
             receiveTask = Task.Run(() => BeginReceiving(token));
 
             // TODO: I don't like this spinning forever, this needs to be triggered only when something
             // is worth checking, and needs to be done on a Task.Run()
             // sendTask = Task.Run(() => BeginSending(token));
+            exitEvent.WaitOne();
         }
 
         public async Task WaitForStop()
